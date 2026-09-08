@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESCG Health & Safety Challenge</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+  .glass { background: rgba(255,255,255,.10); backdrop-filter: blur(12px); }
+  .answer:hover { transform: translateY(-2px); }
+  .answer { transition: .18s ease; }
+  .progress { transition: width .35s ease; }
+  .pulse { animation: pulse .5s ease; }
+  .moving-target {
+    will-change: left, top;
+    min-height: 82px;
+    background: rgba(15, 23, 42, 0.98) !important;
+    border-color: rgba(255,255,255,.45) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,.55), 0 0 0 3px rgba(2,6,23,.75);
+    text-shadow: 0 2px 3px rgba(0,0,0,.9);
+  }
+  .target-label {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .target-number {
+    flex: 0 0 auto;
+    box-shadow: 0 0 0 2px rgba(2,6,23,.8);
+  }
+  @keyframes pulse { 50% { transform: scale(1.03); } }
+
+  #answers { cursor: crosshair; }
+  #answers button { cursor: crosshair; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-950 text-white">
+<div class="fixed left-2 top-2 z-50 select-none" title="Pikachu">
+  <div class="text-[18px] leading-none drop-shadow-md">⚡</div>
+  <div class="mt-[-2px] text-[10px]">🐭</div>
+</div>
+<div class="fixed right-2 top-2 z-50 select-none" title="Roaring Knight as Papyrus">
+  <div class="relative h-16 w-14 rounded-xl border border-white/10 bg-slate-950/80 p-1 text-center shadow-lg backdrop-blur">
+    <div class="text-[9px] font-black uppercase tracking-tight text-cyan-300">Knight</div>
+    <div class="mt-0.5 text-[25px] leading-none">💀</div>
+    <div class="absolute right-0 top-5 text-[13px]">⚔️</div>
+    <div class="mt-0.5 text-[8px] font-black text-white">PAPYRUS!</div>
+  </div>
+</div>
+
+<div class="min-h-screen bg-gradient-to-br from-slate-950 via-emerald-950 to-sky-950">
+  <main class="mx-auto max-w-5xl px-5 py-8">
+    <header class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-sm font-semibold text-emerald-300">🦺 ESCG Learning Game</div>
+        <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Health & Safety Challenge</h1>
+        <p class="mt-2 max-w-2xl text-slate-300">Take aim, shoot the safest answer, and learn why each choice matters.</p>
+      </div>
+      <div class="glass rounded-2xl border border-white/10 px-5 py-3 text-center">
+        <div class="text-xs uppercase tracking-widest text-slate-400">Score</div>
+        <div id="score" class="text-3xl font-black">0</div>
+      </div>
+    </header>
+
+    <section id="start" class="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl sm:p-10">
+      <div class="grid gap-8 md:grid-cols-[1.3fr_.7fr] md:items-center">
+        <div>
+          <h2 class="text-2xl font-bold sm:text-3xl">Ready for the safety mission?</h2>
+          <p class="mt-3 leading-7 text-slate-300">You’ll face 10 realistic situations covering PPE, slips and trips, fire safety, manual handling, reporting hazards, chemicals, electrical safety and emergency response.</p>
+          <div class="mt-6 flex flex-wrap gap-3 text-sm">
+            <span class="rounded-full bg-sky-400/10 px-3 py-2 text-sky-200">10 questions</span>
+            <span class="rounded-full bg-amber-400/10 px-3 py-2 text-amber-200">Shoot the answer</span>
+            <span class="rounded-full bg-emerald-400/10 px-3 py-2 text-emerald-200">Learning tips</span>
+          </div>
+          <button onclick="startGame()" class="mt-8 rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 shadow-lg shadow-emerald-900/30 hover:bg-emerald-300">Start shooting →</button>
+        </div>
+        <div class="rounded-3xl bg-gradient-to-br from-emerald-400/20 to-sky-400/10 p-7 text-center">
+          <div class="text-7xl">🦺</div>
+          <p class="mt-4 font-bold">Aim carefully. Shoot safely. Learn.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="game" class="mt-10 hidden">
+      <div class="mb-4 flex items-center justify-between text-sm text-slate-300">
+        <span id="questionCount">Question 1 of 10</span>
+        <span id="category">PPE</span>
+      </div>
+      <div class="h-2 overflow-hidden rounded-full bg-white/10"><div id="progress" class="progress h-full w-0 bg-emerald-400"></div></div>
+
+      <div id="card" class="mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl sm:p-9">
+        <div class="text-5xl" id="icon">🪖</div>
+        <h2 id="question" class="mt-5 text-2xl font-extrabold leading-tight sm:text-3xl"></h2>
+        <div id="answers" class="relative mt-7 min-h-[360px] overflow-hidden rounded-3xl border border-white/10 bg-slate-950/60"></div>
+        <div id="feedback" class="mt-6 hidden rounded-2xl border p-5"></div>
+        <button id="nextBtn" onclick="nextQuestion()" class="mt-5 hidden rounded-xl bg-sky-400 px-5 py-3 font-bold text-slate-950 hover:bg-sky-300">Next target →</button>
+      </div>
+    </section>
+
+    <section id="result" class="mt-10 hidden rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl">
+      <div id="resultIcon" class="text-7xl">🏆</div>
+      <h2 id="resultTitle" class="mt-4 text-3xl font-black"></h2>
+      <p id="resultText" class="mx-auto mt-3 max-w-2xl text-slate-300"></p>
+      <div class="mx-auto mt-7 max-w-md rounded-2xl bg-slate-900/60 p-5">
+        <div class="text-sm text-slate-400">Final score</div>
+        <div id="finalScore" class="mt-1 text-5xl font-black text-emerald-300"></div>
+      </div>
+      <button onclick="startGame()" class="mt-7 rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 hover:bg-emerald-300">Play again</button>
+    </section>
+
+    <footer class="mt-10 border-t border-white/10 pt-5 text-center text-xs text-slate-500">
+      Educational game — follow your organisation’s approved policies, risk assessments and emergency procedures.
+    </footer>
+  </main>
+</div>
+
+<script>
+const questions = [
+ {cat:"PPE",icon:"🪖",q:"You are entering an area where safety glasses and hearing protection are required. What should you do?",a:["Wear the required PPE before entering.","Enter quickly and put PPE on later.","Borrow damaged PPE if it is available.","Ignore the signs if you are only there briefly."],c:0,why:"Safety signs identify controls you must follow. Put on suitable, undamaged PPE before entering the controlled area."},
+ {cat:"Slips & Trips",icon:"🧹",q:"You notice liquid spilled across a busy walkway. What is the safest first response?",a:["Walk around it and leave it for someone else.","Warn people, isolate the area if possible, and report/clean it using the correct procedure.","Cover it with paper and continue working.","Run across it before anyone else arrives."],c:1,why:"Prevent others from being exposed to the hazard and follow your workplace spill-cleaning/reporting procedure."},
+ {cat:"Fire Safety",icon:"🔥",q:"You hear the fire alarm at work. What should you do?",a:["Finish your task first.","Use the lift to leave quickly.","Follow the emergency procedure and evacuate to the designated assembly point.","Hide in the nearest room."],c:2,why:"Treat alarms seriously. Follow the site's evacuation procedure and go to the designated assembly point."},
+ {cat:"Manual Handling",icon:"📦",q:"A box looks too heavy to lift safely on your own. What is the best choice?",a:["Lift it quickly using your back.","Ask for help or use suitable mechanical assistance.","Drag it across the floor without checking the route.","Twist while lifting so you can see where you are going."],c:1,why:"Plan the task and use assistance when the load or conditions make a solo lift unsafe."},
+ {cat:"Hazard Reporting",icon:"⚠️",q:"You spot a damaged electrical cable on equipment. What should you do?",a:["Keep using it carefully.","Tape it yourself and carry on.","Stop using it if safe to do so and report it through the correct process.","Hide the cable so nobody trips over it."],c:2,why:"Damaged equipment can create serious risks. Remove it from use where appropriate and report it to the responsible person."},
+ {cat:"Chemicals",icon:"🧪",q:"Before using an unfamiliar cleaning chemical, what should you do?",a:["Mix it with another cleaner to make it stronger.","Check the label and required safety information and follow the approved procedure.","Smell it to identify what it is.","Use it without PPE because it is only a cleaner."],c:1,why:"Read the label and relevant safety information, understand the controls, and use the required PPE and procedure."},
+ {cat:"Electrical Safety",icon:"🔌",q:"A plug or socket appears cracked or damaged. What is the safest action?",a:["Use it one more time.","Report it and do not use damaged electrical equipment.","Push the damaged part back into place.","Cover it with clothing."],c:1,why:"Damaged electrical equipment should not be used. Report it and follow the site's isolation/repair process."},
+ {cat:"Emergency Response",icon:"🚨",q:"Someone has a serious injury at work. What should you do?",a:["Move them immediately unless there is a reason to.","Get appropriate help, raise the alarm and follow the emergency/first-aid procedure.","Give them food and water.","Post about it online."],c:1,why:"Get appropriate assistance promptly and follow your workplace emergency and first-aid arrangements. Avoid unnecessary movement of an injured person."},
+ {cat:"Working at Height",icon:"🪜",q:"You need to reach something high up. What is the safest approach?",a:["Stand on a chair.","Use the approved access equipment and follow the working-at-height procedure.","Climb shelves if they look sturdy.","Ask a colleague to hold an unstable box while you climb it."],c:1,why:"Use suitable, approved access equipment and follow the control measures for work at height."},
+ {cat:"Safety Culture",icon:"🗣️",q:"A colleague points out a hazard you created accidentally. What is the best response?",a:["Ignore them.","Thank them, make the area safe, and learn from the feedback.","Argue because nobody was injured.","Wait until the end of the month to mention it."],c:1,why:"Good safety culture encourages people to speak up. Respond constructively, control the hazard and learn from near misses and feedback."}
+];
+
+let index=0, score=0, answered=false;
+let movers=[], moveTimer=null, lastMove=0;
+const $ = id => document.getElementById(id);
+
+
+function stopMovingTargets(){
+  if(moveTimer){ clearInterval(moveTimer); moveTimer=null; }
+  movers=[];
+}
+
+function startMovingTargets(){
+  stopMovingTargets();
+  const arena=$("answers");
+  const targets=[...arena.querySelectorAll(".moving-target")];
+  const rect=arena.getBoundingClientRect();
+
+  movers=targets.map((el,i)=>({
+    el,
+    x: 5 + Math.random()*58,
+    y: 22 + Math.random()*55,
+    vx: (Math.random()>.5?1:-1) * (0.10 + Math.random()*0.18),
+    vy: (Math.random()>.5?1:-1) * (0.08 + Math.random()*0.16),
+    wobble: Math.random()*Math.PI*2,
+    phase: Math.random()*Math.PI*2
+  }));
+
+  movers.forEach(m=>{
+    m.el.style.left=m.x+"%";
+    m.el.style.top=m.y+"%";
+  });
+
+  lastMove=performance.now();
+  function tick(now){
+    if(answered || !document.body.contains(arena)) return;
+    const dt=Math.min(2,(now-lastMove)/16.67);
+    lastMove=now;
+
+    movers.forEach(m=>{
+      m.wobble += 0.035*dt;
+      // Randomly perturb direction so the path continually changes.
+      if(Math.random()<0.025){
+        m.vx += (Math.random()-.5)*0.10;
+        m.vy += (Math.random()-.5)*0.10;
+        const speed=Math.hypot(m.vx,m.vy);
+        const max=.34;
+        if(speed>max){m.vx=m.vx/speed*max;m.vy=m.vy/speed*max;}
+      }
+      m.x += m.vx*dt;
+      m.y += m.vy*dt + Math.sin(m.wobble+m.phase)*0.035*dt;
+
+      // Bounce within the arena.
+      if(m.x<2){m.x=2;m.vx=Math.abs(m.vx);}
+      if(m.x>57){m.x=57;m.vx=-Math.abs(m.vx);}
+      if(m.y<19){m.y=19;m.vy=Math.abs(m.vy);}
+      if(m.y>66){m.y=66;m.vy=-Math.abs(m.vy);}
+
+      m.el.style.left=m.x+"%";
+      m.el.style.top=m.y+"%";
+    });
+    moveTimer=requestAnimationFrame(tick);
+  }
+  moveTimer=requestAnimationFrame(tick);
+}
+
+function startGame(){
+  stopMovingTargets();
+  index=0; score=0; answered=false;
+  $("score").textContent=0;
+  $("start").classList.add("hidden");
+  $("result").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function render(){
+  stopMovingTargets();
+  const q=questions[index];
+  $("questionCount").textContent=`Question ${index+1} of ${questions.length}`;
+  $("category").textContent=q.cat;
+  $("progress").style.width=((index)/questions.length*100)+"%";
+  $("icon").textContent=q.icon;
+  $("question").textContent=q.q;
+  $("feedback").classList.add("hidden");
+  $("nextBtn").classList.add("hidden");
+  answered=false;
+
+  const arena=$("answers");
+  arena.innerHTML=`
+    <div class="pointer-events-none absolute inset-0">
+      <div class="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-400/10"></div>
+      <div class="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-400/5"></div>
+    </div>
+    <div class="pointer-events-none absolute left-4 top-4 text-xs font-bold uppercase tracking-widest text-slate-500">
+      🎯 Targets move randomly — click the correct answer to fire!<br><span class="normal-case tracking-normal text-[10px] text-slate-400">Targets stay high-contrast and readable while moving.</span>
+    </div>
+  `;
+
+  // Safe, deterministic target positions.
+  const positions=[
+    ["8%","27%"],["54%","20%"],["10%","64%"],["57%","63%"]
+  ];
+
+  q.a.forEach((ans,i)=>{
+    const b=document.createElement("button");
+    b.className="answer moving-target absolute w-[42%] rounded-2xl border-2 border-white/10 bg-slate-800/95 p-3 text-left shadow-xl hover:scale-105 hover:border-emerald-300/70 hover:bg-slate-700 sm:w-[38%]";
+    b.style.animationDuration = (3.6 + (i * 0.65)) + "s";
+    b.style.animationDelay = (-i * 0.7) + "s";
+    b.style.left=positions[i][0];
+    b.style.top=positions[i][1];
+    b.innerHTML=`
+      <div class="flex items-center gap-2">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/20 text-lg">🎯</span>
+        <span class="text-xs font-black uppercase text-slate-400">${String.fromCharCode(65+i)}</span>
+      </div>
+      <div class="mt-2 text-sm font-bold leading-5 sm:text-base">${ans}</div>`;
+    b.onclick=()=>choose(i,b);
+    arena.appendChild(b);
+  });
+  startMovingTargets();
+}
+function choose(choice,button){
+  if(answered)return;
+  answered=true;
+  stopMovingTargets();
+  const q=questions[index];
+  [...$("answers").querySelectorAll("button")].forEach(b=>b.disabled=true);
+  const correct=choice===q.c;
+
+  // Shooting effect
+  button.classList.add("scale-110");
+  button.innerHTML=`<div class="flex items-center justify-center gap-2 py-5 text-2xl font-black">
+    ${correct?"💥 HIT!":"💥 MISS!"}
+  </div>`;
+
+  if(correct){
+    score+=10;
+    $("score").textContent=score;
+    button.classList.add("border-emerald-400","bg-emerald-400/20","pulse");
+  } else {
+    button.classList.add("border-rose-400","bg-rose-400/20");
+    const target=$("answers").querySelectorAll("button")[q.c];
+    target.classList.add("border-emerald-400","bg-emerald-400/20");
+    target.innerHTML=`<div class="flex items-center justify-center gap-2 py-5 text-lg font-black">
+      ✅ CORRECT TARGET
+    </div>`;
+  }
+
+  $("feedback").className=`mt-6 rounded-2xl border p-5 ${correct?"border-emerald-400/30 bg-emerald-400/10":"border-rose-400/30 bg-rose-400/10"}`;
+  $("feedback").innerHTML=`<div class="font-black">${correct?"🎯 Direct hit!":"💥 Wrong target!"}</div><p class="mt-2 text-slate-200">${q.why}</p>`;
+  $("nextBtn").classList.remove("hidden");
+  $("progress").style.width=((index+1)/questions.length*100)+"%";
+}
+function nextQuestion(){
+  index++;
+  if(index>=questions.length) finish();
+  else render();
+}
+
+function finish(){
+  $("game").classList.add("hidden");
+  $("result").classList.remove("hidden");
+  $("finalScore").textContent=`${score} / ${questions.length*10}`;
+  let title,text,icon;
+  if(score>=90){icon="🏆";title="Safety champion!";text="Excellent judgement. You consistently recognised hazards and chose sensible controls."}
+  else if(score>=70){icon="🦺";title="Strong safety awareness";text="Good work. Review the feedback from the questions you missed and keep building safe habits."}
+  else {icon="📚";title="Keep learning";text="Safety skills improve with practice. Revisit the feedback and your organisation’s procedures, then try again."}
+  $("resultIcon").textContent=icon;$("resultTitle").textContent=title;$("resultText").textContent=text;
+}
+</script>
+
+<div class="fixed bottom-3 right-3 z-40 w-56 rounded-xl border border-yellow-300/20 bg-slate-950/90 p-3 text-[10px] leading-4 text-yellow-100 shadow-xl backdrop-blur">
+  <div class="mb-1 font-black uppercase tracking-widest text-yellow-300">🐝 Bee Movie corner</div>
+  <div>“According to all known laws of aviation, there is no way a bee should be able to fly.”</div>
+</div>
+</body>
+</html>
